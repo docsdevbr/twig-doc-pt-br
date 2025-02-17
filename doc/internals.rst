@@ -30,7 +30,7 @@ The Lexer
 
 The lexer tokenizes a template source code into a token stream (each token is
 an instance of ``\Twig\Token``, and the stream is an instance of
-``\Twig\TokenStream``). The default lexer recognizes 13 different token types:
+``\Twig\TokenStream``). The default lexer recognizes 15 different token types:
 
 * ``\Twig\Token::BLOCK_START_TYPE``, ``\Twig\Token::BLOCK_END_TYPE``: Delimiters for blocks (``{% %}``)
 * ``\Twig\Token::VAR_START_TYPE``, ``\Twig\Token::VAR_END_TYPE``: Delimiters for variables (``{{ }}``)
@@ -39,6 +39,8 @@ an instance of ``\Twig\Token``, and the stream is an instance of
 * ``\Twig\Token::NUMBER_TYPE``: A number in an expression;
 * ``\Twig\Token::STRING_TYPE``: A string in an expression;
 * ``\Twig\Token::OPERATOR_TYPE``: An operator;
+* ``\Twig\Token::ARROW_TYPE``: An arrow function operator (``=>``);
+* ``\Twig\Token::SPREAD_TYPE``: A spread operator (``...``);
 * ``\Twig\Token::PUNCTUATION_TYPE``: A punctuation sign;
 * ``\Twig\Token::INTERPOLATION_START_TYPE``, ``\Twig\Token::INTERPOLATION_END_TYPE``: Delimiters for string interpolation;
 * ``\Twig\Token::EOF_TYPE``: Ends of template.
@@ -122,11 +124,14 @@ using)::
     /* Hello {{ name }} */
     class __TwigTemplate_1121b6f109fe93ebe8c6e22e3712bceb extends Template
     {
-        protected function doDisplay(array $context, array $blocks = [])
+        protected function doDisplay(array $context, array $blocks = []): iterable
         {
+            $macros = $this->macros;
             // line 1
-            echo "Hello ";
-            echo twig_escape_filter($this->env, (isset($context["name"]) ? $context["name"] : null), "html", null, true);
+            yield "Hello ";
+            // line 2
+            yield $this->env->getRuntime('Twig\Runtime\EscaperRuntime')->escape((isset($context["name"]) || array_key_exists("name", $context) ? $context["name"] : (function () { throw new RuntimeError('Variable "name" does not exist.', 2, $this->source); })()), "html", null, true);
+            return; yield '';
         }
 
         // some more code

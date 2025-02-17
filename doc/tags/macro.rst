@@ -7,7 +7,7 @@ are useful to reuse template fragments to not repeat yourself.
 Macros are defined in regular templates.
 
 Imagine having a generic helper template that define how to render HTML forms
-via macros (called ``forms.html``):
+via macros (called ``forms.twig``):
 
 .. code-block:: html+twig
 
@@ -49,11 +49,11 @@ tag:
 
 .. code-block:: twig
 
-    {% import "forms.html" as forms %}
+    {% import "forms.html.twig" as forms %}
 
-The above ``import`` call imports the ``forms.html`` file (which can contain
-only macros, or a template and some macros), and import the macros as items of
-the ``forms`` local variable.
+The above ``import`` call imports the ``forms.html.twig`` file (which can contain
+only macros, or a template and some macros), and import the macros as
+attributes of the ``forms`` local variable.
 
 The macros can then be called at will in the *current* template:
 
@@ -61,16 +61,31 @@ The macros can then be called at will in the *current* template:
 
     <p>{{ forms.input('username') }}</p>
     <p>{{ forms.input('password', null, 'password') }}</p>
+    {# You can also use named arguments #}
+    <p>{{ forms.input(name: 'password', type: 'password') }}</p>
 
 Alternatively you can import names from the template into the current namespace
 via the ``from`` tag:
 
 .. code-block:: html+twig
 
-    {% from 'forms.html' import input as input_field, textarea %}
+    {% from 'forms.html.twig' import input as input_field, textarea %}
 
     <p>{{ input_field('password', '', 'password') }}</p>
+    <p>{{ input_field(name: 'password', type: 'password') }}</p>
     <p>{{ textarea('comment') }}</p>
+
+.. caution::
+
+    As macros imported via ``from`` are called like functions, be careful that
+    they shadow existing functions:
+
+    .. code-block:: twig
+
+        {% from 'forms.html.twig' import input as include %}
+
+        {# include refers to the macro and not to the built-in "include" function #}
+        {{ include() }}
 
 .. tip::
 
@@ -101,7 +116,7 @@ Imported macros are not available in the body of ``embed`` tags, you need
 to explicitly re-import macros inside the tag.
 
 When calling ``import`` or ``from`` from a ``block`` tag, the imported macros
-are only defined in the current block and they override macros defined at the
+are only defined in the current block and they shadow macros defined at the
 template level with the same names.
 
 Checking if a Macro is defined
@@ -111,9 +126,9 @@ You can check if a macro is defined via the ``defined`` test:
 
 .. code-block:: twig
 
-    {% import "macros.twig" as macros %}
+    {% import "macros.html.twig" as macros %}
 
-    {% from "macros.twig" import hello %}
+    {% from "macros.html.twig" import hello %}
 
     {% if macros.hello is defined -%}
         OK

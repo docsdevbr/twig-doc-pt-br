@@ -39,9 +39,12 @@ And here is how to escape variables included in JavaScript code:
 The ``escape`` filter supports the following escaping strategies for HTML
 documents:
 
-* ``html``: escapes a string for the **HTML body** context.
+* ``html``: escapes a string for the **HTML body** context, 
+  or for HTML attributes values **inside quotes**.
 
-* ``js``: escapes a string for the **JavaScript** context.
+* ``js``: escapes a string for the **JavaScript** context. This is intended for 
+  use in JavaScript or JSON strings, and encodes values using backslash escape 
+  sequences.
 
 * ``css``: escapes a string for the **CSS** context. CSS escaping can be
   applied to any string being inserted into CSS and escapes everything except
@@ -50,7 +53,8 @@ documents:
 * ``url``: escapes a string for the **URI or parameter** contexts. This should
   not be used to escape an entire URI; only a subcomponent being inserted.
 
-* ``html_attr``: escapes a string for the **HTML attribute** context.
+* ``html_attr``: escapes a string for the **HTML attribute** context,
+  **without quotes** around HTML attribute values.
 
 Note that doing contextual escaping in HTML documents is hard and choosing the
 right escaping strategy depends on a lot of factors. Please, read related
@@ -90,18 +94,58 @@ to learn more about this topic.
             {{ var|escape(strategy)|raw }} {# won't be double-escaped #}
         {% endautoescape %}
 
+.. tip::
+
+    The ``html_attr`` escaping strategy can be useful when you need to 
+    escape a **dynamic HTML attribute name**:
+
+    .. code-block:: html+twig
+
+        <p {{ your_html_attr|e('html_attr') }}="attribute value">
+    
+    It can also be used for escaping a **dynamic HTML attribute value** 
+    if it is not quoted, but this is **less performant**. 
+    Instead, it is recommended to quote the HTML attribute value and use 
+    the ``html`` escaping strategy:
+
+    .. code-block:: html+twig
+
+        <p data-content="{{ content|e('html') }}">
+
+        {# is equivalent to, but is less performant #}
+        <p data-content={{ content|e('html_attr') }}>
+
 Custom Escapers
 ---------------
 
+.. versionadded:: 3.10
+
+    The ``EscaperRuntime`` class has been added in 3.10. On previous versions,
+    you can define custom escapers by calling the ``setEscaper()`` method on
+    the escaper extension instance. The first argument is the escaper strategy
+    (to be used in the ``escape`` call) and the second one must be a valid PHP
+    callable::
+
+        use Twig\Extension\EscaperExtension;
+
+        $twig = new \Twig\Environment($loader);
+        $twig->getExtension(EscaperExtension::class)->setEscaper('csv', 'csv_escaper');
+
+    When called by Twig, the callable receives the Twig environment instance,
+    the string to escape, and the charset.
+
 You can define custom escapers by calling the ``setEscaper()`` method on the
-escaper extension instance. The first argument is the escaper name (to be
-used in the ``escape`` call) and the second one must be a valid PHP callable::
+escaper runtime instance. It accepts two arguments: the strategy name and a PHP
+callable that accepts a string to escape and the charset::
+
+    use Twig\Runtime\EscaperRuntime;
 
     $twig = new \Twig\Environment($loader);
-    $twig->getExtension(\Twig\Extension\EscaperExtension::class)->setEscaper('csv', 'csv_escaper');
+    $escaper = fn ($string, $charset) => $string;
+    $twig->getRuntime(EscaperRuntime::class)->setEscaper('identity', $escaper);
 
-When called by Twig, the callable receives the Twig environment instance, the
-string to escape, and the charset.
+    # Usage in a template:
+    # {{ 'Twig'|escape('identity') }}
 
 .. note::
 

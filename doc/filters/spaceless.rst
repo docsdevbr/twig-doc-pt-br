@@ -1,6 +1,11 @@
 ``spaceless``
 =============
 
+.. warning::
+
+    The ``spaceless`` filter is deprecated as of Twig 3.12. While not a full
+    replacement, you can check the :ref:`whitespace control features <templates-whitespace-control>`.
+
 Use the ``spaceless`` filter to remove whitespace *between HTML tags*, not
 whitespace within HTML tags or whitespace in plain text:
 

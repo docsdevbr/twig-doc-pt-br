@@ -104,8 +104,8 @@ What?      Implementation difficulty? How often? When?
 Globals
 -------
 
-A global variable is like any other template variable, except that it's
-available in all templates and macros::
+Global variables are available in all templates and macros. Use ``addGlobal()``
+to add a global variable to a Twig environment::
 
     $twig = new \Twig\Environment($loader);
     $twig->addGlobal('text', new Text());
@@ -174,6 +174,17 @@ is compiled to something like the following::
 The ``\Twig\TwigFilter`` class takes an array of options as its last argument::
 
     $filter = new \Twig\TwigFilter('rot13', 'str_rot13', $options);
+
+Charset-aware Filters
+~~~~~~~~~~~~~~~~~~~~~
+
+If you want to access the default charset in your filter, set the
+``needs_charset`` option to ``true``; Twig will pass the default charset as the
+first argument to the filter call::
+
+    $filter = new \Twig\TwigFilter('rot13', function (string $charset, $string) {
+        return str_rot13($string);
+    }, ['needs_charset' => true]);
 
 Environment-aware Filters
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -260,22 +271,58 @@ A dynamic filter can define more than one dynamic parts::
 
 The filter receives all dynamic part values before the normal filter arguments,
 but after the environment and the context. For instance, a call to
-``'foo'|a_path_b()`` will result in the following arguments to be passed to the
-filter: ``('a', 'b', 'foo')``.
+``'Paris'|a_path_b()`` will result in the following arguments to be passed to the
+filter: ``('a', 'b', 'Paris')``.
 
 Deprecated Filters
 ~~~~~~~~~~~~~~~~~~
 
-You can mark a filter as being deprecated by setting the ``deprecated`` option
-to ``true``. You can also give an alternative filter that replaces the
-deprecated one when that makes sense::
+.. versionadded:: 3.15
+
+    The ``deprecation_info`` option was added in Twig 3.15.
+
+You can mark a filter as being deprecated by setting the ``deprecation_info``
+option::
 
     $filter = new \Twig\TwigFilter('obsolete', function () {
         // ...
-    }, ['deprecated' => true, 'alternative' => 'new_one']);
+    }, ['deprecation_info' => new DeprecatedCallableInfo('twig/twig', '3.11', 'new_one')]);
+
+The ``DeprecatedCallableInfo`` constructor takes the following parameters:
+
+* The Composer package name that defines the filter;
+* The version when the filter was deprecated.
+
+Optionally, you can also provide the following parameters about an alternative:
+
+* The package name that contains the alternative filter;
+* The alternative filter name that replaces the deprecated one;
+* The package version that added the alternative filter.
 
 When a filter is deprecated, Twig emits a deprecation notice when compiling a
 template using it. See :ref:`deprecation-notices` for more information.
+
+.. note::
+
+    Before Twig 3.15, you can mark a filter as being deprecated by setting the
+    ``deprecated`` option to ``true``. You can also give an alternative filter
+    that replaces the deprecated one when that makes sense::
+
+        $filter = new \Twig\TwigFilter('obsolete', function () {
+            // ...
+        }, ['deprecated' => true, 'alternative' => 'new_one']);
+
+    .. versionadded:: 3.11
+
+        The ``deprecating_package`` option was added in Twig 3.11.
+
+    You can also set the ``deprecating_package`` option to specify the package
+    that is deprecating the filter, and ``deprecated`` can be set to the
+    package version when the filter was deprecated::
+
+        $filter = new \Twig\TwigFilter('obsolete', function () {
+            // ...
+        }, ['deprecated' => '1.1', 'deprecating_package' => 'twig/some-package']);
 
 Functions
 ---------
@@ -327,11 +374,11 @@ compilation. This is useful if your test can be compiled into PHP primitives.
 This is used by many of the tests built into Twig::
 
     namespace App;
-    
+
     use Twig\Environment;
     use Twig\Node\Expression\TestExpression;
     use Twig\TwigTest;
-    
+
     $twig = new Environment($loader);
     $test = new TwigTest(
         'odd',
@@ -402,7 +449,7 @@ Most of the time though, a tag is not needed:
 
 * If your tag does not output anything, but only exists because of a side
   effect, create a **function** that returns nothing and call it via the
-  :doc:`filter <tags/do>` tag.
+  :doc:`do <tags/do>` tag.
 
   For instance, if you want to create a tag that logs text, create a ``log``
   function instead and call it via the :doc:`do <tags/do>` tag:
@@ -445,14 +492,14 @@ Add a tag by calling the ``addTokenParser`` method on the ``\Twig\Environment``
 instance::
 
     $twig = new \Twig\Environment($loader);
-    $twig->addTokenParser(new Project_Set_TokenParser());
+    $twig->addTokenParser(new CustomSetTokenParser());
 
 Defining a Token Parser
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Now, let's see the actual code of this class::
 
-    class Project_Set_TokenParser extends \Twig\TokenParser\AbstractTokenParser
+    class CustomSetTokenParser extends \Twig\TokenParser\AbstractTokenParser
     {
         public function parse(\Twig\Token $token)
         {
@@ -464,7 +511,7 @@ Now, let's see the actual code of this class::
             $value = $parser->getExpressionParser()->parseExpression();
             $stream->expect(\Twig\Token::BLOCK_END_TYPE);
 
-            return new Project_Set_Node($name, $value, $token->getLine(), $this->getTag());
+            return new CustomSetNode($name, $value, $token->getLine());
         }
 
         public function getTag()
@@ -477,7 +524,7 @@ The ``getTag()`` method must return the tag we want to parse, here ``set``.
 
 The ``parse()`` method is invoked whenever the parser encounters a ``set``
 tag. It should return a ``\Twig\Node\Node`` instance that represents the node (the
-``Project_Set_Node`` calls creating is explained in the next section).
+``CustomSetNode`` calls creating is explained in the next section).
 
 The parsing process is simplified thanks to a bunch of methods you can call
 from the token stream (``$this->parser->getStream()``):
@@ -507,13 +554,13 @@ the ``set`` tag.
 Defining a Node
 ~~~~~~~~~~~~~~~
 
-The ``Project_Set_Node`` class itself is quite short::
+The ``CustomSetNode`` class itself is quite short::
 
-    class Project_Set_Node extends \Twig\Node\Node
+    class CustomSetNode extends \Twig\Node\Node
     {
-        public function __construct($name, \Twig\Node\Expression\AbstractExpression $value, $line, $tag = null)
+        public function __construct($name, \Twig\Node\Expression\AbstractExpression $value, $line)
         {
-            parent::__construct(['value' => $value], ['name' => $name], $line, $tag);
+            parent::__construct(['value' => $value], ['name' => $name], $line);
         }
 
         public function compile(\Twig\Compiler $compiler)
@@ -620,7 +667,7 @@ To keep your extension class clean and lean, inherit from the built-in
 ``\Twig\Extension\AbstractExtension`` class instead of implementing the interface as it provides
 empty implementations for all methods::
 
-    class Project_Twig_Extension extends \Twig\Extension\AbstractExtension
+    class CustomTwigExtension extends \Twig\Extension\AbstractExtension
     {
     }
 
@@ -633,7 +680,7 @@ You can register an extension by using the ``addExtension()`` method on your
 main ``Environment`` object::
 
     $twig = new \Twig\Environment($loader);
-    $twig->addExtension(new Project_Twig_Extension());
+    $twig->addExtension(new CustomTwigExtension());
 
 .. tip::
 
@@ -645,7 +692,7 @@ Globals
 Global variables can be registered in an extension via the ``getGlobals()``
 method::
 
-    class Project_Twig_Extension extends \Twig\Extension\AbstractExtension implements \Twig\Extension\GlobalsInterface
+    class CustomTwigExtension extends \Twig\Extension\AbstractExtension implements \Twig\Extension\GlobalsInterface
     {
         public function getGlobals(): array
         {
@@ -657,13 +704,23 @@ method::
         // ...
     }
 
+.. caution::
+
+    Globals are fetched once from extensions and then cached for the lifetime
+    of the Twig environment. It means that globals should not be used to store
+    values that can change during the lifetime of the Twig environment. For
+    instance, if you're using an application server like RoadRunner or
+    FrankenPHP, you should not store values related to the current context (like
+    the HTTP request). If you do so, don't forget to reset the cache between
+    requests by calling ``Environment::resetGlobals()``.
+
 Functions
 ~~~~~~~~~
 
 Functions can be registered in an extension via the ``getFunctions()``
 method::
 
-    class Project_Twig_Extension extends \Twig\Extension\AbstractExtension
+    class CustomTwigExtension extends \Twig\Extension\AbstractExtension
     {
         public function getFunctions()
         {
@@ -682,7 +739,7 @@ To add a filter to an extension, you need to override the ``getFilters()``
 method. This method must return an array of filters to add to the Twig
 environment::
 
-    class Project_Twig_Extension extends \Twig\Extension\AbstractExtension
+    class CustomTwigExtension extends \Twig\Extension\AbstractExtension
     {
         public function getFilters()
         {
@@ -701,50 +758,33 @@ Adding a tag in an extension can be done by overriding the
 ``getTokenParsers()`` method. This method must return an array of tags to add
 to the Twig environment::
 
-    class Project_Twig_Extension extends \Twig\Extension\AbstractExtension
+    class CustomTwigExtension extends \Twig\Extension\AbstractExtension
     {
         public function getTokenParsers()
         {
-            return [new Project_Set_TokenParser()];
+            return [new CustomSetTokenParser()];
         }
 
         // ...
     }
 
 In the above code, we have added a single new tag, defined by the
-``Project_Set_TokenParser`` class. The ``Project_Set_TokenParser`` class is
+``CustomSetTokenParser`` class. The ``CustomSetTokenParser`` class is
 responsible for parsing the tag and compiling it to PHP.
 
 Operators
 ~~~~~~~~~
 
-The ``getOperators()`` methods lets you add new operators. Here is how to add
-the ``!``, ``||``, and ``&&`` operators::
-
-    class Project_Twig_Extension extends \Twig\Extension\AbstractExtension
-    {
-        public function getOperators()
-        {
-            return [
-                [
-                    '!' => ['precedence' => 50, 'class' => \Twig\Node\Expression\Unary\NotUnary::class],
-                ],
-                [
-                    '||' => ['precedence' => 10, 'class' => \Twig\Node\Expression\Binary\OrBinary::class, 'associativity' => \Twig\ExpressionParser::OPERATOR_LEFT],
-                    '&&' => ['precedence' => 15, 'class' => \Twig\Node\Expression\Binary\AndBinary::class, 'associativity' => \Twig\ExpressionParser::OPERATOR_LEFT],
-                ],
-            ];
-        }
-
-        // ...
-    }
+The ``getOperators()`` methods lets you add new operators. To implement a new
+one, have a look at the default operators provided by
+``Twig\Extension\CoreExtension``.
 
 Tests
 ~~~~~
 
 The ``getTests()`` method lets you add new test functions::
 
-    class Project_Twig_Extension extends \Twig\Extension\AbstractExtension
+    class CustomTwigExtension extends \Twig\Extension\AbstractExtension
     {
         public function getTests()
         {
@@ -773,7 +813,7 @@ any valid PHP callable:
 
 The simplest way to use methods is to define them on the extension itself::
 
-    class Project_Twig_Extension extends \Twig\Extension\AbstractExtension
+    class CustomTwigExtension extends \Twig\Extension\AbstractExtension
     {
         private $rot13Provider;
 
@@ -811,7 +851,7 @@ must be autoload-able)::
             // implement the logic to create an instance of $class
             // and inject its dependencies
             // most of the time, it means using your dependency injection container
-            if ('Project_Twig_RuntimeExtension' === $class) {
+            if ('CustomTwigRuntime' === $class) {
                 return new $class(new Rot13Provider());
             } else {
                 // ...
@@ -827,9 +867,9 @@ must be autoload-able)::
     (``\Twig\RuntimeLoader\ContainerRuntimeLoader``).
 
 It is now possible to move the runtime logic to a new
-``Project_Twig_RuntimeExtension`` class and use it directly in the extension::
+``CustomTwigRuntime`` class and use it directly in the extension::
 
-    class Project_Twig_RuntimeExtension
+    class CustomTwigRuntime
     {
         private $rot13Provider;
 
@@ -844,17 +884,25 @@ It is now possible to move the runtime logic to a new
         }
     }
 
-    class Project_Twig_Extension extends \Twig\Extension\AbstractExtension
+    class CustomTwigExtension extends \Twig\Extension\AbstractExtension
     {
         public function getFunctions()
         {
             return [
-                new \Twig\TwigFunction('rot13', ['Project_Twig_RuntimeExtension', 'rot13']),
+                new \Twig\TwigFunction('rot13', ['CustomTwigRuntime', 'rot13']),
                 // or
-                new \Twig\TwigFunction('rot13', 'Project_Twig_RuntimeExtension::rot13'),
+                new \Twig\TwigFunction('rot13', 'CustomTwigRuntime::rot13'),
             ];
         }
     }
+
+.. note::
+
+    The extension class should implement the ``Twig\Extension\LastModifiedExtensionInterface``
+    interface to invalidate the template cache when the runtime class is modified.
+    The ``AbstractExtension`` class implements this interface and tracks the
+    runtime class if its name is the same as the extension class but ends with
+    ``Runtime`` instead of ``Extension``.
 
 Testing an Extension
 --------------------
@@ -867,27 +915,29 @@ structure in your test directory::
 
     Fixtures/
         filters/
-            foo.test
-            bar.test
+            lower.test
+            upper.test
         functions/
-            foo.test
-            bar.test
+            date.test
+            format.test
         tags/
-            foo.test
-            bar.test
+            for.test
+            if.test
     IntegrationTest.php
 
 The ``IntegrationTest.php`` file should look like this::
 
+    namespace Project\Tests;
+
     use Twig\Test\IntegrationTestCase;
 
-    class Project_Tests_IntegrationTest extends IntegrationTestCase
+    class IntegrationTest extends IntegrationTestCase
     {
         public function getExtensions()
         {
             return [
-                new Project_Twig_Extension1(),
-                new Project_Twig_Extension2(),
+                new CustomTwigExtension1(),
+                new CustomTwigExtension2(),
             ];
         }
 

@@ -1,8 +1,8 @@
 ``for``
 =======
 
-Loop over each item in a sequence. For example, to display a list of users
-provided in a variable called ``users``:
+Loop over each item in a sequence or a mapping. For example, to display a list
+of users provided in a variable called ``users``:
 
 .. code-block:: html+twig
 
@@ -15,8 +15,8 @@ provided in a variable called ``users``:
 
 .. note::
 
-    A sequence can be either an array or an object implementing the
-    ``Traversable`` interface.
+    A sequence or a mapping can be either an array or an object implementing
+    the ``Traversable`` interface.
 
 If you do need to iterate over a sequence of numbers, you can use the ``..``
 operator:
@@ -45,13 +45,13 @@ The ``..`` operator can take any expression at both sides:
         * {{ letter }}
     {% endfor %}
 
-.. tip:
+.. tip::
 
     If you need a step different from 1, you can use the ``range`` function
     instead.
 
-The `loop` variable
--------------------
+The ``loop`` variable
+---------------------
 
 Inside of a ``for`` loop block you can access some special variables:
 
@@ -80,8 +80,8 @@ Variable              Description
     ``loop.last`` variables are only available for PHP arrays, or objects that
     implement the ``Countable`` interface.
 
-The `else` Clause
------------------
+The ``else`` Clause
+-------------------
 
 If no iteration took place because the sequence was empty, you can render a
 replacement block by using ``else``:
@@ -138,4 +138,19 @@ the :doc:`slice <../filters/slice>` filter:
         {% for user in users|slice(0, 10) %}
             <li>{{ user.username|e }}</li>
         {% endfor %}
+    </ul>
+
+Iterating over a String
+-----------------------
+
+To iterate over the characters of a string, use the
+:doc:`split <../filters/split>` filter:
+
+.. code-block:: html+twig
+
+    <h1>Characters</h1>
+    <ul>
+        {% for char in "諺 / ことわざ"|split('') -%}
+            <li>{{ char }}</li>
+        {%- endfor %}
     </ul>
