@@ -1,34 +1,62 @@
-# [twig-doc-pt-br][portal-link]
+# [twig-doc-pt-br][page]
 
-[![README file in English][readme-badge-en]][readme-lang-en]
-[![README file in Brazilian Portuguese][readme-badge-pt-br]][readme-lang-pt-br]
+[![README file in English][badge-readme-en]][readme-en]
+[![README file in Brazilian Portuguese][badge-readme-pt-br]][readme-pt-br]
+[![License: BSD-3-CLAUSE][badge-license]][license]
+[![Contributors][badge-contributors]][contributors]
+[![GitHub Sponsors][badge-github-sponsors]][github-sponsors]
 
 Translation of the Twig Documentation into Brazilian Portuguese.
 
+## Contributing
+
+We welcome contributions!
+Please read our [Contributing Guidelines][contributing] to learn how you can
+help with translations, reviews, and improvements.
+
+## Code of Conduct
+
+We are committed to providing a welcoming community.
+Please read our [Code of Conduct][code-of-conduct] to understand our community
+standards.
+
 ## Support
 
-You can support the project through [GitHub Sponsors][sponsor-github] or
-[Pix][sponsor-pix].
+You can support the project through [GitHub Sponsors][github-sponsors] or
+[Pix][sponsor].
 
 ## License
 
-Copyright (c) 2009-present by the Twig Team. All rights reserved.<br>
+Copyright (c) 2009-present The Twig Team.<br>
 The Twig logo is (c) 2010-2025 Symfony.
 
-Licensed under the [BSD 3-Clause License][license-bsd].
+Documentation licensed under the [3-Clause BSD License][license].<br>
+The original work was translated from English into Brazilian Portuguese.
 
-[license-bsd]: LICENSE
+[badge-contributors]: https://img.shields.io/github/contributors/docsdevbr/twig-doc-pt-br
 
-[portal-link]: https://docs.dev.br/pt-br/docs/twig/doc/
+[badge-github-sponsors]: https://img.shields.io/github/sponsors/docsdevbr
 
-[readme-badge-en]: https://img.shields.io/badge/lang-en-blue.svg
+[badge-license]: https://img.shields.io/github/license/docsdevbr/twig-doc-pt-br
 
-[readme-badge-pt-br]: https://img.shields.io/badge/lang-pt--br-dark--green.svg
+[badge-readme-en]: https://img.shields.io/badge/lang-en-blue
 
-[readme-lang-en]: README.EN.md
+[badge-readme-pt-br]: https://img.shields.io/badge/lang-pt--br-blue
 
-[readme-lang-pt-br]: README.md
+[code-of-conduct]: https://github.com/docsdevbr/.github/blob/main/CODE_OF_CONDUCT.EN.md
 
-[sponsor-github]: https://github.com/sponsors/docsdevbr
+[contributing]: https://github.com/docsdevbr/.github/blob/main/CONTRIBUTING.EN.md
 
-[sponsor-pix]: https://docs.dev.br/pt-br/support-us
+[contributors]: https://github.com/docsdevbr/twig-doc-pt-br/graphs/contributors
+
+[github-sponsors]: https://github.com/sponsors/docsdevbr
+
+[license]: LICENSE
+
+[page]: https://pt.docs.dev.br/p/twig/
+
+[readme-en]: README.EN.md
+
+[readme-pt-br]: README.md
+
+[sponsor]: https://pt.docs.dev.br/sponsor
