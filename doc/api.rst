@@ -145,6 +145,17 @@ The following options are available:
   (default to ``-1`` -- all optimizations are enabled; set it to ``0`` to
   disable).
 
+* ``use_yield`` *boolean*
+
+  ``true``: forces templates to exclusively use ``yield`` instead of ``echo``
+  (all extensions must be yield ready)
+
+  ``false`` (default): allows templates to use a mix of ``yield`` and ``echo``
+  calls to allow for a progressive migration.
+  
+  Switch to ``true`` when possible as this will be the only supported mode in
+  Twig 4.0.
+
 Loaders
 -------
 
@@ -327,23 +338,23 @@ extension via the ``addExtension()`` method::
 
 Twig comes bundled with the following extensions:
 
-* *Twig\Extension\CoreExtension*: Defines all the core features of Twig.
+* ``\Twig\Extension\CoreExtension``: Defines all the core features of Twig.
 
-* *Twig\Extension\DebugExtension*: Defines the ``dump`` function to help debug
+* ``\Twig\Extension\DebugExtension``: Defines the ``dump`` function to help debug
   template variables.
 
-* *Twig\Extension\EscaperExtension*: Adds automatic output-escaping and the
+* ``\Twig\Extension\EscaperExtension``: Adds automatic output-escaping and the
   possibility to escape/unescape blocks of code.
 
-* *Twig\Extension\SandboxExtension*: Adds a sandbox mode to the default Twig
+* ``\Twig\Extension\SandboxExtension``: Adds a sandbox mode to the default Twig
   environment, making it safe to evaluate untrusted code.
 
-* *Twig\Extension\ProfilerExtension*: Enables the built-in Twig profiler.
+* ``\Twig\Extension\ProfilerExtension``: Enables the built-in Twig profiler.
 
-* *Twig\Extension\OptimizerExtension*: Optimizes the node tree before
+* ``\Twig\Extension\OptimizerExtension``: Optimizes the node tree before
   compilation.
 
-* *Twig\Extension\StringLoaderExtension*: Defines the ``template_from_string``
+* ``\Twig\Extension\StringLoaderExtension``: Defines the ``template_from_string``
    function to allow loading templates from string in a template.
 
 The Core, Escaper, and Optimizer extensions are registered by default.

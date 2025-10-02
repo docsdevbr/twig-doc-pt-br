@@ -196,6 +196,27 @@ Nodes
  * The ``Twig\Node\Expression\ConditionalExpression`` class is deprecated as of
    Twig 3.17, use ``Twig\Node\Expression\Ternary\ConditionalTernary`` instead.
 
+ * The ``is_defined_test`` attribute is deprecated as of Twig 3.21, use
+   ``Twig\Node\Expression\SupportDefinedTestInterface`` instead.
+
+* Instantiating ``Twig\Node\Node`` directly is deprecated as of Twig 3.15. Use
+  ``EmptyNode`` or ``Nodes`` instead depending on the use case. The
+  ``Twig\Node\Node`` class will be abstract in Twig 4.0.
+
+* Not passing ``AbstractExpression`` arguments to the following ``Node`` class
+  constructors is deprecated as of Twig 3.15:
+
+  * ``AbstractBinary``
+  * ``AbstractUnary``
+  * ``BlockReferenceExpression``
+  * ``TestExpression``
+  * ``DefinedTest``
+  * ``FilterExpression``
+  * ``RawFilter``
+  * ``DefaultFilter``
+  * ``InlinePrint``
+  * ``NullCoalesceExpression``
+
 Node Visitors
 -------------
 
@@ -256,10 +277,10 @@ Token
 Templates
 ---------
 
+* The method ``Template::loadTemplate()`` is deprecated.
 * Passing ``Twig\Template`` instances to Twig public API is deprecated (like
-  in ``Environment::resolveTemplate()``, ``Environment::load()``, and
-  ``Template::loadTemplate()``); pass instances of ``Twig\TemplateWrapper``
-  instead.
+  in ``Environment::resolveTemplate()`` and ``Environment::load()``); pass
+  instances of ``Twig\TemplateWrapper`` instead.
 
 Filters
 -------
@@ -354,27 +375,6 @@ Functions/Filters/Tests
   ``TwigFunction::getSafe()`` is deprecated as of Twig 3.16; return ``[]``
   instead.
 
-Node
-----
-
-* Instantiating ``Twig\Node\Node`` directly is deprecated as of Twig 3.15. Use
-  ``EmptyNode`` or ``Nodes`` instead depending on the use case. The
-  ``Twig\Node\Node`` class will be abstract in Twig 4.0.
-
-* Not passing ``AbstractExpression`` arguments to the following ``Node`` class
-  constructors is deprecated as of Twig 3.15:
-
-  * ``AbstractBinary``
-  * ``AbstractUnary``
-  * ``BlockReferenceExpression``
-  * ``TestExpression``
-  * ``DefinedTest``
-  * ``FilterExpression``
-  * ``RawFilter``
-  * ``DefaultFilter``
-  * ``InlinePrint``
-  * ``NullCoalesceExpression``
-
 Operators
 ---------
 
@@ -455,7 +455,7 @@ Operators
   as of Twig 3.21, use ``Twig\Extension\ExtensionInterface::getExpressionParsers()``
   instead:
 
-    Before:
+  Before::
 
       public function getOperators(): array {
           return [
@@ -466,7 +466,7 @@ Operators
           ];
       }
 
-    After:
+  After::
 
       public function getExpressionParsers(): array {
           return [

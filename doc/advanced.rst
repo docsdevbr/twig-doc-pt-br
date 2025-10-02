@@ -504,6 +504,7 @@ Now, let's see the actual code of this class::
         public function parse(\Twig\Token $token)
         {
             $parser = $this->parser;
+            $lineno = $token->getLine();
             $stream = $parser->getStream();
 
             $name = $stream->expect(\Twig\Token::NAME_TYPE)->getValue();
@@ -511,7 +512,7 @@ Now, let's see the actual code of this class::
             $value = $parser->getExpressionParser()->parseExpression();
             $stream->expect(\Twig\Token::BLOCK_END_TYPE);
 
-            return new CustomSetNode($name, $value, $token->getLine());
+            return new CustomSetNode($name, $value, $lineno);
         }
 
         public function getTag()
@@ -545,6 +546,18 @@ from the token stream (``$this->parser->getStream()``):
 
 Parsing expressions is done by calling the ``parseExpression()`` like we did for
 the ``set`` tag.
+
+When encountering a syntax error during parsing, throw an exception::
+
+    throw new SyntaxError('Some error message.', $stream->getCurrent()->getLine(), $stream->getSourceContext());
+
+For better error reporting to the user, follow these recommendations:
+
+ * Use ``\Twig\Error\SyntaxError``;
+
+ * **Always** pass the line number of the node and the source context;
+
+ * End the exception message with a dot.
 
 .. tip::
 
@@ -590,13 +603,18 @@ developer generate beautiful and readable PHP code:
   ``\Twig\Node\ForNode`` for a usage example).
 
 * ``addDebugInfo()``: Adds the line of the original template file related to
-  the current node as a comment.
+  the current node as a comment. It's highly recommended to call this method
+  when implementing custom nodes.
 
 * ``indent()``: Indents the generated code (see ``\Twig\Node\BlockNode`` for a
   usage example).
 
 * ``outdent()``: Outdents the generated code (see ``\Twig\Node\BlockNode`` for a
   usage example).
+
+For structural nodes, always call ``addDebugInfo()`` early on in the
+compilation process to improve error reporting to the user in case the code
+would throw an exception.
 
 .. _creating_extensions:
 
@@ -775,7 +793,7 @@ responsible for parsing the tag and compiling it to PHP.
 Operators
 ~~~~~~~~~
 
-The ``getOperators()`` methods lets you add new operators. To implement a new
+The ``getOperators()`` method lets you add new operators. To implement a new
 one, have a look at the default operators provided by
 ``Twig\Extension\CoreExtension``.
 
@@ -795,6 +813,107 @@ The ``getTests()`` method lets you add new test functions::
 
         // ...
     }
+
+Using PHP Attributes to define Extensions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 3.21
+
+    The attribute classes were added in Twig 3.21.
+
+You can add the ``#[AsTwigFilter]``, ``#[AsTwigFunction]``, and ``#[AsTwigTest]``
+attributes to public methods of any class to define filters, functions, and tests.
+
+Create a class using these attributes::
+
+    use Twig\Attribute\AsTwigFilter;
+    use Twig\Attribute\AsTwigFunction;
+    use Twig\Attribute\AsTwigTest;
+
+    class ProjectExtension
+    {
+        #[AsTwigFilter('rot13')]
+        public static function rot13(string $string): string
+        {
+            // ...
+        }
+
+        #[AsTwigFunction('lipsum')]
+        public static function lipsum(int $count): string
+        {
+            // ...
+        }
+
+        #[AsTwigTest('even')]
+        public static function isEven(int $number): bool
+        {
+            // ...
+        }
+    }
+
+Then register the ``Twig\Extension\AttributeExtension`` with the class name::
+
+    $twig = new \Twig\Environment($loader);
+    $twig->addExtension(new \Twig\Extension\AttributeExtension(ProjectExtension::class));
+
+If all the methods are static, you are done. The ``ProjectExtension`` class will
+never be instantiated and the class attributes will be scanned only when a template
+is compiled.
+
+Otherwise, if some methods are not static, you need to register the class as
+a runtime extension using one of the runtime loaders::
+
+    use Twig\Attribute\AsTwigFunction;
+
+    class ProjectExtension
+    {
+        // Inject hypothetical dependencies
+        public function __construct(private LipsumProvider $lipsumProvider) {}
+
+        #[AsTwigFunction('lipsum')]
+        public function lipsum(int $count): string
+        {
+            return $this->lipsumProvider->lipsum($count);
+        }
+    }
+
+    $twig = new \Twig\Environment($loader);
+    $twig->addExtension(new \Twig\Extension\AttributeExtension(ProjectExtension::class);
+    $twig->addRuntimeLoader(new \Twig\RuntimeLoader\FactoryLoader([
+        ProjectExtension::class => function () use ($lipsumProvider) {
+            return new ProjectExtension($lipsumProvider);
+        },
+    ]));
+
+If you want to access the current environment instance in your filter or function,
+add the ``Twig\Environment`` type to the first argument of the method::
+
+    class ProjectExtension
+    {
+        #[AsTwigFunction('lipsum')]
+        public function lipsum(\Twig\Environment $env, int $count): string
+        {
+            // ...
+        }
+    }
+
+``#[AsTwigFilter]`` and ``#[AsTwigFunction]`` support variadic arguments
+automatically when applied to variadic methods::
+
+    class ProjectExtension
+    {
+        #[AsTwigFilter('thumbnail')]
+        public function thumbnail(string $file, mixed ...$options): string
+        {
+            // ...
+        }
+    }
+
+The attributes support other options used to configure the Twig Callables:
+
+ * ``AsTwigFilter``: ``needsCharset``, ``needsEnvironment``, ``needsContext``, ``isSafe``, ``isSafeCallback``, ``preEscape``, ``preservesSafety``, ``deprecationInfo``
+ * ``AsTwigFunction``: ``needsCharset``, ``needsEnvironment``, ``needsContext``, ``isSafe``, ``isSafeCallback``, ``deprecationInfo``
+ * ``AsTwigTest``: ``needsCharset``, ``needsEnvironment``, ``needsContext``, ``deprecationInfo``
 
 Definition vs Runtime
 ~~~~~~~~~~~~~~~~~~~~~
